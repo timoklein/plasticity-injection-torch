@@ -5,41 +5,41 @@
 </p>
 
 Pytorch reimplementation of the [Plasticity injection](https://arxiv.org/abs/2305.15555) (Deep Reinforcement Learning with Plasticity Injection).
-Plasticity injection serves two purposes: First, it can be used to detect whether a network has lost plasticity by applying it at some point over the course of the training.
-Second, it allows improving the sample efficiency of agents that have lost their plasticity without the performance decline concomitant from resets.
+Plasticity injection serves two purposes: First, it can detect whether a network has lost plasticity by applying it at some point throughout the training.
+Second, it improves the sample efficiency of agents that have lost their plasticity without the performance decline concomitant with resets.
 
 ## Applying the plasticity injection intervention to a DQN agent
 
 Plasticity injection adheres to two desiderata:
 
 1. It should not change the number of trainable parameters of the agent.
-2. It should not change the output of the agent after the injection.
+2. It should not change the agent's output after the injection.
 
-These criteria are met by the following algorithm:
+The following algorithm meets these criteria:
 
 1. *Freeze* the parameters $\theta$ of the current Q-function head.
 2. Create two instances of **new parameters** $\theta^\prime~.$
 3. Keep the first instance of $\theta^\prime$ learnable: $\theta^\prime_1~.$
 4. *Freeze* the second instance of $\theta^\prime: \theta^\prime_2~.$  
-   Adding these **frozen parameters**  $\theta^\prime_2$ ensures that the output of the network at step $t$ where the intervention is performed is not changed.
+   Adding these **frozen parameters**  $\theta^\prime_2$ ensures that the network's output at step $t$ where the intervention is performed is not changed.
 
 The agent's Q-function is then defined as:
 
-$$
+```math
 Q(s) = \underbrace{h_\theta (s)}_{\text{frozen}} + \underbrace{h_{\theta_1^\prime} (s)}_{\text{learnable}} - \underbrace{h_{\theta_2^\prime} (s)}_{\text{frozen}}
-$$
+```
 
 ## Implementation notes
 
-- The code provides an option to have all three heads trainable instead of just $h_{\theta_1^\prime} (s)$, corresponding to one of the ablations in the appendix.
+- The code allows all three heads to be trainable instead of just $h_{\theta_1^\prime} (s)$, corresponding to one of the ablations in the appendix.
 - Gradients from the frozen heads are still propagated back to the encoder, in line with the paper.
 - The target network must also be reset to mirror the agent's Q network.
 - Adding a new parameter group to the optimizer didn't work for me, so I added all parameters before the training and freeze/unfreeze them as needed.
-- The authors used RMSProp instead of Adam and provide an ablation in Figure 9 of the appendix for whether it makes sense to reset the optimizer state. They find that it hurts performance, therefore I'm not resetting the Adam moments as well.
+- The authors used RMSProp instead of Adam and provide an ablation in Figure 9 of the appendix for whether it makes sense to reset the optimizer state. They find it hurts performance; therefore, I'm not resetting the Adam moments.
 
 ## Results on Phoenix
 
-Phoenix is a game where plasticity is clearly lost early in training. My results are not an exact reproduction of the paper due to 200M experiments on Atari being too expensive.
+Phoenix is a game where plasticity is lost early in training. My results are not an exact reproduction of the paper because 200M experiments on Atari are too expensive.
 
 <p align="center">
     <img src="img/injection_results.png" alt="Results" width="50%"/>
